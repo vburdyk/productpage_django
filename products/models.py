@@ -1,11 +1,12 @@
 from django.db import models
 from django.db.models import Q
-
+from django.contrib.auth.models import User
 
 
 class Product(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
+    slug = models.CharField(max_length=255, unique=True, default="slug")
     price = models.IntegerField(null=False)
     discount_price = models.IntegerField(null=True, blank=True)
     show_on_main_page = models.BooleanField(default=False)
@@ -20,7 +21,7 @@ class Product(models.Model):
 
 
 class ProductImage(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
     image = models.ImageField(upload_to="uploads/products/")
     is_main = models.BooleanField(default=False)
 
@@ -39,3 +40,17 @@ class Category(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Comment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="comments")
+    parent = models.ForeignKey("Comment", null=True, blank=True, on_delete=models.CASCADE, related_name="childs")
+    text = models.TextField()
+
+    @property
+    def child_comments(self):
+        return self.childs.all()
+
+    def __str__(self):
+        return self.text
